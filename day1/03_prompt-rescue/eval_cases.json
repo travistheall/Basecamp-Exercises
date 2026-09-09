@@ -1,0 +1,365 @@
+{
+  "categories": {
+    "clean": {
+      "label": "Clean inputs",
+      "case_ids": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "multi_issue": {
+      "label": "Multi-issue",
+      "case_ids": [
+        5,
+        6
+      ]
+    },
+    "vague": {
+      "label": "Vague/unclear",
+      "case_ids": [
+        7,
+        8,
+        21
+      ]
+    },
+    "non_native": {
+      "label": "Non-native English",
+      "case_ids": [
+        9,
+        10,
+        20
+      ]
+    },
+    "feature_request": {
+      "label": "Feature requests",
+      "case_ids": [
+        11,
+        12
+      ]
+    },
+    "complex": {
+      "label": "Complex/long/edge",
+      "case_ids": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": 1,
+      "category": "clean",
+      "input": "Subject: Error 503 on login page\n\nSince 2pm EST today, all users (approximately 500) in our organization are unable to log into the platform. We receive a 503 Service Unavailable error. This is our primary CRM tool and sales team is completely blocked. Error code: SVC-503-AUTH. Running version 4.1.2.",
+      "gold_priority": "P1",
+      "gold_entities": {
+        "product": "CRM platform",
+        "version": "4.1.2",
+        "error_codes": [
+          "SVC-503-AUTH"
+        ],
+        "affected_users": "500"
+      },
+      "audited_response": false,
+      "notes": "Clean P1 \u2014 should pass at baseline. System outage blocking all users."
+    },
+    {
+      "id": 2,
+      "category": "clean",
+      "input": "Subject: Search function returning wrong results\n\nSince yesterday's update to version 2.8.0, the search feature in our inventory management module is returning incorrect results. When searching for product SKUs, it returns unrelated items. This is affecting our warehouse team of about 45 people who rely on search for daily picking operations. No error codes displayed, but the behavior started right after the update.",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": "inventory management module",
+        "version": "2.8.0",
+        "error_codes": [],
+        "affected_users": "45"
+      },
+      "audited_response": false,
+      "notes": "Clean P2 \u2014 major feature broken, clear product/version. Should pass at baseline."
+    },
+    {
+      "id": 3,
+      "category": "clean",
+      "input": "Subject: Tooltip text cut off on settings page\n\nOn the admin settings page, the tooltip for the \"Data Retention Policy\" field is truncated. It shows \"Data will be retained for...\" and cuts off. This only affects admins when hovering over that specific field. We're on version 5.0.1. Not blocking anything, just noticed it during a training session with 2 new admins.",
+      "gold_priority": "P3",
+      "gold_entities": {
+        "product": null,
+        "version": "5.0.1",
+        "error_codes": [],
+        "affected_users": "2"
+      },
+      "audited_response": false,
+      "notes": "Clean P3 \u2014 minor cosmetic bug. Should pass at baseline."
+    },
+    {
+      "id": 4,
+      "category": "clean",
+      "input": "Subject: Request for bulk export to PDF\n\nWe'd love to have the ability to export multiple reports to PDF at once. Currently we have to export each report individually which is time-consuming for our analytics team. Would be great if there was a \"Select All\" checkbox and a \"Export Selected to PDF\" button. About 8 people on our team would use this feature regularly.",
+      "gold_priority": "P4",
+      "gold_entities": {
+        "product": null,
+        "version": null,
+        "error_codes": [],
+        "affected_users": "8"
+      },
+      "audited_response": false,
+      "notes": "Clean P4 \u2014 feature request, polite framing. Should pass at baseline. Response should NOT promise a 'fix'."
+    },
+    {
+      "id": 5,
+      "category": "multi_issue",
+      "input": "Subject: URGENT - billing broken AND can't export data\n\nOur billing dashboard has been showing wrong numbers since Tuesday and also the CSV export feature throws a 500 error. We have board reporting on Friday and need both fixed. About 200 users on our team are affected by the export issue, billing is just our finance team (3 people) but it's blocking payroll.",
+      "gold_priority": "P1",
+      "gold_entities": {
+        "product": null,
+        "version": null,
+        "error_codes": [
+          "500"
+        ],
+        "affected_users": "200"
+      },
+      "audited_response": true,
+      "notes": "Multi-issue \u2014 payroll blocked = P1. Both issues must be acknowledged. Common baseline fail: classifies as P2, merges issues, response only addresses export."
+    },
+    {
+      "id": 6,
+      "category": "multi_issue",
+      "input": "Subject: Two issues - dashboard broken and feature idea\n\nHi, two things:\n\n1. Our real-time analytics dashboard has been showing stale data since Monday. The numbers haven't updated in 3 days and our ops team (12 people) uses this for shift planning. We're on version 3.5.\n\n2. Separately \u2014 it would be really nice if the dashboard had a dark mode option. Several team members have asked about this.\n\nThanks!",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": "real-time analytics dashboard",
+        "version": "3.5",
+        "error_codes": [],
+        "affected_users": "12"
+      },
+      "audited_response": false,
+      "notes": "Multi-issue \u2014 real bug (P2) + feature request (P4). Should triage separately. Common baseline fail: averages to P3."
+    },
+    {
+      "id": 7,
+      "category": "vague",
+      "input": "Subject: things arent working right\n\nhey so a bunch of stuff seems off today? like the pages load slow and sometimes i get errors. not sure whats happening. its been like this since the morning. thanks",
+      "gold_priority": "P3",
+      "gold_entities": {
+        "product": null,
+        "version": null,
+        "error_codes": [],
+        "affected_users": null
+      },
+      "audited_response": false,
+      "notes": "Vague \u2014 no product, no version, no error codes. Confidence should be low. Common baseline fail: hallucinates entities like product name 'PageLoader'."
+    },
+    {
+      "id": 8,
+      "category": "vague",
+      "input": "Subject: Really frustrated with your platform\n\nI've been a customer for 3 years and lately the quality has gone downhill. Things just don't feel right. My team is getting frustrated and we're considering alternatives. Something needs to change.",
+      "gold_priority": "P3",
+      "gold_entities": {
+        "product": null,
+        "version": null,
+        "error_codes": [],
+        "affected_users": null
+      },
+      "audited_response": true,
+      "notes": "Vague emotional \u2014 no technical detail. Confidence should be low. Response MUST ask for more info. Common baseline fail: assigns confident priority based on emotion."
+    },
+    {
+      "id": 9,
+      "category": "non_native",
+      "input": "Subject: Probleme mit der Integration\n\nHello, we have problem with API integration since update to version 3.2. The webhook is not fire correctly and data is missing in dashboard. Very urgent for us because is production system for 50 customer. Error say \"timeout exceeded\" sometimes.",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": "API integration",
+        "version": "3.2",
+        "error_codes": [
+          "timeout exceeded"
+        ],
+        "affected_users": "50"
+      },
+      "audited_response": false,
+      "notes": "Non-native English \u2014 clear intent despite grammar. Version and error code present. May pass at baseline."
+    },
+    {
+      "id": 10,
+      "category": "non_native",
+      "input": "Subject: Problem when use system\n\nGood day. I am writing because system have problem. When my colleague try to make report, the button not work sometimes. Other times is ok. We are 6 person in team, maybe 3 have this problem. I think is about browser maybe? We use version 2.1 I think. Sorry for my english, is not my first language.",
+      "gold_priority": "P3",
+      "gold_entities": {
+        "product": null,
+        "version": "2.1",
+        "error_codes": [],
+        "affected_users": "3"
+      },
+      "audited_response": false,
+      "notes": "Non-native English \u2014 ambiguous severity, intermittent issue. Common baseline fail: JSON breaks on unusual phrasing."
+    },
+    {
+      "id": 11,
+      "category": "feature_request",
+      "input": "Subject: CRITICAL: No SSO integration support\n\nThis is UNACCEPTABLE. Your platform doesn't support SAML SSO integration which is a MANDATORY requirement for our security compliance. Our CISO is threatening to pull the contract if this isn't resolved within the week. This affects all 2000 users in our organization. We need SSO support IMMEDIATELY or we will have to switch to a competitor.",
+      "gold_priority": "P4",
+      "gold_entities": {
+        "product": null,
+        "version": null,
+        "error_codes": [],
+        "affected_users": "2000"
+      },
+      "audited_response": true,
+      "notes": "Feature request disguised with urgent language. P4 regardless of tone. Response should acknowledge as feature request, NOT promise to 'fix'. Common baseline fail: classifies as P1/P2 due to urgency words."
+    },
+    {
+      "id": 12,
+      "category": "feature_request",
+      "input": "Subject: Suggestion - calendar view for tasks\n\nHi there! Love the product so far. One thing that would be really helpful is a calendar view for our task management module. Right now we can only see tasks in list view, but our project managers (about 5 of us) would really benefit from seeing deadlines on a calendar. No rush on this, just wanted to share the feedback. Thanks!",
+      "gold_priority": "P4",
+      "gold_entities": {
+        "product": "task management module",
+        "version": null,
+        "error_codes": [],
+        "affected_users": "5"
+      },
+      "audited_response": false,
+      "notes": "Polite feature request \u2014 should clearly be P4. Usually passes at baseline."
+    },
+    {
+      "id": 13,
+      "category": "complex",
+      "input": "Subject: Multiple performance issues after migration to cloud\n\nTeam,\n\nFollowing our migration to your cloud-hosted version 6.0 last week, we're experiencing several performance degradation issues that I want to document thoroughly:\n\n1. Page load times have increased from an average of 1.2 seconds to 8-10 seconds across all modules.\n2. The real-time notification system has a delay of 30-45 seconds (was near-instant before).\n3. File uploads larger than 5MB consistently time out with error UPLOAD-TIMEOUT-413.\n4. The API rate limiting seems overly aggressive \u2014 our automation scripts that worked fine before are now getting 429 errors after just 10 requests per minute.\n5. Database queries via the reporting module take 3-5x longer than before.\n\nThis is affecting our entire engineering team of 85 people. We're on the Enterprise plan and this level of performance is not what we signed up for. Our SLA guarantees 99.9% uptime with sub-2-second response times.\n\nPlease escalate this to your infrastructure team. We need a call scheduled this week to discuss remediation.\n\nBest regards,\nSarah Chen\nVP Engineering, DataFlow Inc.",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": null,
+        "version": "6.0",
+        "error_codes": [
+          "UPLOAD-TIMEOUT-413",
+          "429"
+        ],
+        "affected_users": "85"
+      },
+      "audited_response": false,
+      "notes": "Very long ticket (200+ words). Valid JSON required, no field truncation. Multiple error codes to extract."
+    },
+    {
+      "id": 14,
+      "category": "complex",
+      "input": "Subject: API endpoint returning 500 with stack trace\n\nOur integration is failing on the /api/v2/users/sync endpoint. Here's the error response:\n\n```\nHTTP 500 Internal Server Error\n{\n  \"error\": \"SYNC_FAILED\",\n  \"message\": \"NullPointerException in UserSyncService.java:142\",\n  \"trace_id\": \"abc-123-def-456\",\n  \"timestamp\": \"2024-01-15T14:30:00Z\"\n}\n```\n\nThis happens when syncing users with special characters in their names (e.g., O'Brien, Garc\u00eda). Running API version 2.4.1. Affects our HR integration for ~30 users with special characters in their names.",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": "API",
+        "version": "2.4.1",
+        "error_codes": [
+          "SYNC_FAILED",
+          "500"
+        ],
+        "affected_users": "30"
+      },
+      "audited_response": false,
+      "notes": "Technical ticket with code snippets/stack traces. Error codes should be extracted from the structured error response."
+    },
+    {
+      "id": 15,
+      "category": "complex",
+      "input": "Subject: Confusion between Analytics Pro and Analytics Basic\n\nWe purchased Analytics Pro but the features seem to match what's described in Analytics Basic documentation. Specifically:\n- Advanced cohort analysis is missing (Pro feature per your website)\n- Custom funnel builder shows \"upgrade required\" even though we're on Pro\n- The API returns our plan as \"analytics_basic\" in the /account endpoint\n\nWe're on version 4.2 of the analytics module. This is affecting our data team of 8 people who were promised Pro features. We think there might be a provisioning error on your end.",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": "Analytics Pro",
+        "version": "4.2",
+        "error_codes": [],
+        "affected_users": "8"
+      },
+      "audited_response": false,
+      "notes": "Multiple products mentioned. Entities should reflect primary product (Analytics Pro), not confuse with Analytics Basic."
+    },
+    {
+      "id": 16,
+      "category": "complex",
+      "input": "Subject: Re: Case #4821 - Follow up on data sync issue\n\nHi, following up on my previous ticket (Case #4821) about the data sync issue. The fix your team deployed last week partially worked \u2014 the hourly syncs are running again, but we're now seeing duplicate records being created on every sync cycle. Before the fix we had missing data, now we have too much data. We're on version 3.1 and this is affecting the same 25 users from the original ticket.\n\nCan you check if the deduplication logic was included in the patch?",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": null,
+        "version": "3.1",
+        "error_codes": [],
+        "affected_users": "25"
+      },
+      "audited_response": false,
+      "notes": "Follow-up ticket referencing previous case. Must NOT hallucinate details about Case #4821 beyond what's stated."
+    },
+    {
+      "id": 17,
+      "category": "complex",
+      "input": "Subject: YOUR SYSTEM CRASHED AND LOST ALL OUR DATA\n\nTHIS IS ABSOLUTELY UNACCEPTABLE!!! YOUR GARBAGE SYSTEM CRASHED DURING OUR END OF QUARTER PROCESSING AND NOW ALL THE REPORTS WE GENERATED ARE GONE. MY CEO IS GOING TO HEAR ABOUT THIS AND WE WILL BE CONTACTING OUR LAWYERS. WE HAVE 150 PEOPLE WHO CANNOT DO THEIR JOBS RIGHT NOW BECAUSE OF YOUR INCOMPETENCE. FIX THIS NOW OR FACE THE CONSEQUENCES.",
+      "gold_priority": "P1",
+      "gold_entities": {
+        "product": null,
+        "version": null,
+        "error_codes": [],
+        "affected_users": "150"
+      },
+      "audited_response": true,
+      "notes": "All caps angry ticket. Priority based on CONTENT (system crash, data loss, 150 users blocked = P1), NOT tone. Response must be professional regardless. Common baseline fail: over-escalates OR under-classifies due to emotional noise."
+    },
+    {
+      "id": 18,
+      "category": "complex",
+      "input": "Subject: it's broken\n\nit's broken. please fix.",
+      "gold_priority": "P3",
+      "gold_entities": {
+        "product": null,
+        "version": null,
+        "error_codes": [],
+        "affected_users": null
+      },
+      "audited_response": false,
+      "notes": "Minimal info. Confidence must be low. All entity fields null/empty. Response MUST ask clarifying questions. Common baseline fail: guesses product/priority confidently."
+    },
+    {
+      "id": 19,
+      "category": "complex",
+      "input": "Subject: Account settings exposing other users' personal data\n\nI discovered something alarming on the UserVault account settings page. When I navigate to Settings > Profile and click quickly between the \"Personal Info\" and \"Security\" tabs, the page briefly flashes what appears to be another user's personal data \u2014 their full name, email address, and phone number. I was able to reproduce this consistently by clicking back and forth rapidly. I'm the only person who has noticed this so far, but if I can see other users' PII this easily, it likely affects every user on the platform. We're running version 9.1.0. No error codes are displayed \u2014 the page behaves normally otherwise.",
+      "gold_priority": "P1",
+      "gold_entities": {
+        "product": "UserVault",
+        "version": "9.1.0",
+        "error_codes": [],
+        "affected_users": "1"
+      },
+      "audited_response": true,
+      "notes": "Tests whether model prioritizes security severity over user count. Only 1 reporter but data privacy/PII exposure = P1 regardless. Common baseline fail: downgrades to P3 because only 1 user reported."
+    },
+    {
+      "id": 20,
+      "category": "non_native",
+      "input": "Subject: \u00d1o\u00f1o Analytics dashboard not loading charts\n\nHi, my name is Jos\u00e9 Garc\u00eda-L\u00f3pez and I manage the analytics team at our company. Since last Thursday's update to version 5.4.2, the \u00d1o\u00f1o Analytics dashboard fails to render any chart widgets. The data tables still load correctly, but all visualization panels show a spinning loader that never resolves. After about 30 seconds, we get error code VIZ-RENDER-408. This is affecting our entire analytics team of 15 people who rely on the dashboard for daily reporting. We have tried clearing browser cache and using different browsers with no improvement.",
+      "gold_priority": "P2",
+      "gold_entities": {
+        "product": "\u00d1o\u00f1o Analytics",
+        "version": "5.4.2",
+        "error_codes": [
+          "VIZ-RENDER-408"
+        ],
+        "affected_users": "15"
+      },
+      "audited_response": false,
+      "notes": "Tests entity extraction with non-Latin/accented characters (\u00f1 in product name, accented characters in reporter name). Common baseline fail: strips or mangles \u00f1 to 'Nono' or 'Noo'."
+    },
+    {
+      "id": 21,
+      "category": "vague",
+      "input": "Subject: Ongoing issues with report builder\n\nHi support, I wanted to flag that several people on my team have been complaining about the report builder being unreliable lately. Reports sometimes take forever to generate and occasionally time out without producing any output. I think it might be affecting other departments too but I'm not sure \u2014 I overheard someone from marketing mention similar issues in the break room. It's not a total blocker since we can usually retry and get it to work eventually, but it's getting annoying and slowing us down.",
+      "gold_priority": "P3",
+      "gold_entities": {
+        "product": "report builder",
+        "version": null,
+        "error_codes": [],
+        "affected_users": null
+      },
+      "audited_response": false,
+      "notes": "Tests whether model fabricates a user count from vague language like 'several' and 'other departments'. affected_users must be null \u2014 no specific number given. Common baseline fail: invents a count like '5' or '10' from 'several people'."
+    }
+  ]
+}
