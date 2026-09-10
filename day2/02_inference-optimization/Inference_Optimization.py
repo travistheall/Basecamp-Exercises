@@ -786,11 +786,7 @@ print("Grader ready — 5 audited fields × 6 contracts = 30 checks; gate is ≥
 # day one of a rescue: not to mock it, but to find where the money and the seconds go.
 
 # %%
-EXTRACT_INSTRUCTION = (
-    "Determine the five audited fields for the contract below. Respond with a JSON object "
-    "with keys auto_renewal, change_of_control, liability_cap_usd, governing_law, risk_tier, "
-    "evidence.\n\nCONTRACT:\n"
-)
+EXTRACT_INSTRUCTION = "Extract the five audited fields for the contract below.\n\nCONTRACT:\n"
 
 
 def clausescan_v0(contract: dict) -> dict:
@@ -1204,21 +1200,38 @@ elif RUN_BATCH:
 CONFIG = {
     # Lever 2 — routing. Try: triage_routing=True, routine_model=MODEL_HAIKU,
     #                         complex_model=MODEL_SONNET
-    "triage_routing": False,
-    "routine_model": MODEL_OPUS,
-    "complex_model": MODEL_OPUS,
+    "triage_routing": True,
+    "routine_model": MODEL_HAIKU,
+    "complex_model": MODEL_SONNET,
 
     # Lever 1 — cache the playbook prefix
-    "cache_playbook": False,
+    "cache_playbook": True,
 
     # Lever 3 + the round-trip collapse — one schema pass instead of briefing → essay → JSON
-    "structured_single_pass": False,
-    "max_tokens": 8000,           # right-size once output is disciplined (~1000)
-    "effort": None,               # "low" | "medium" | "high" — Sonnet/Opus only
+    "structured_single_pass": True,
+    "max_tokens": 1000,           # right-size once output is disciplined (~1000)
+    "effort": "low",              # "low" | "medium" | "high" — Sonnet/Opus only
 
     # Lever 5 — portfolio concurrency (0 = sequential; warm-first is automatic)
-    "parallel_workers": 0,
+    "parallel_workers": 4,
+
+    # Off-script experiments (Part 5's "go off-script" suggestions)
+    "playbook_for_complex_only": True,  # routine contracts skip the playbook entirely;
+                                        # complex ones get it (cached) — fewer cache hits,
+                                        # but routine calls carry zero playbook tokens at all
+    "second_opinion_high_risk": True,   # any HIGH verdict gets a confirming Opus pass
+    "prewarm_cache": True,              # tiny max_tokens=1 request writes the cache before
+                                        # the portfolio's own warm-first contract runs
 }
+
+
+def _prewarm_cache():
+    """Write the playbook into cache with the cheapest possible request, before the
+    portfolio's first real contract pays the write premium."""
+    client.messages.create(
+        model=MODEL_HAIKU, max_tokens=1, system=CACHED_SYSTEM,
+        messages=[{"role": "user", "content": "warm"}],
+    )
 
 
 def clausescan_v1(contract: dict) -> dict:
@@ -1228,38 +1241,51 @@ def clausescan_v1(contract: dict) -> dict:
 
     # Routing (Lever 2)
     model = CONFIG["routine_model"]
+    is_complex = False
     if CONFIG["triage_routing"]:
         verdict, tri_resp = triage(contract)
         calls.append((MODEL_HAIKU, tri_resp.usage))
-        model = CONFIG["complex_model"] if verdict == "COMPLEX" else CONFIG["routine_model"]
+        is_complex = verdict == "COMPLEX"
+        model = CONFIG["complex_model"] if is_complex else CONFIG["routine_model"]
 
-    # Cached vs raw playbook (Lever 1)
-    system = CACHED_SYSTEM if CONFIG["cache_playbook"] else PLAYBOOK
+    # Cached vs raw vs no playbook (Lever 1, + off-script: skip it for routine contracts)
+    skip_playbook = (CONFIG.get("playbook_for_complex_only") and CONFIG["triage_routing"]
+                     and not is_complex)
+    if skip_playbook:
+        system = None
+    else:
+        system = CACHED_SYSTEM if CONFIG["cache_playbook"] else PLAYBOOK
 
     if CONFIG["structured_single_pass"]:
         # Levers 3 + 4 — one pass, schema output, optional effort dial
         output_config = {"format": EXTRACTION_SCHEMA}
         if CONFIG["effort"] and model != MODEL_HAIKU:
             output_config["effort"] = CONFIG["effort"]
-        resp = client.messages.create(
-            model=model, max_tokens=CONFIG["max_tokens"], system=system,
+        kwargs = dict(
+            model=model, max_tokens=CONFIG["max_tokens"],
             messages=[{"role": "user", "content": EXTRACT_INSTRUCTION + contract["text"]}],
             output_config=output_config,
         )
+        if system is not None:
+            kwargs["system"] = system
+        resp = client.messages.create(**kwargs)
         calls.append((model, resp.usage))
         fields = extract_json(text_of(resp))
     else:
         # v0's two-pass flow, verbatim
-        r1 = client.messages.create(
-            model=model, max_tokens=CONFIG["max_tokens"], system=system,
+        kwargs1 = dict(
+            model=model, max_tokens=CONFIG["max_tokens"],
             messages=[{"role": "user", "content":
                        "Write a detailed clause-by-clause briefing of this contract, with "
                        "commentary on anything unusual, before any extraction is attempted.\n\n"
                        + contract["text"]}],
         )
+        if system is not None:
+            kwargs1["system"] = system
+        r1 = client.messages.create(**kwargs1)
         calls.append((model, r1.usage))
-        r2 = client.messages.create(
-            model=model, max_tokens=CONFIG["max_tokens"], system=system,
+        kwargs2 = dict(
+            model=model, max_tokens=CONFIG["max_tokens"],
             messages=[{"role": "user", "content":
                        "Here is an internal briefing of a contract:\n\n" + text_of(r1)
                        + "\n\nNow, explain your reasoning step by step in detail, and then "
@@ -1267,8 +1293,28 @@ def clausescan_v1(contract: dict) -> dict:
                        + "liability_cap_usd, governing_law, risk_tier, evidence.\n\nCONTRACT:\n"
                        + contract["text"]}],
         )
+        if system is not None:
+            kwargs2["system"] = system
+        r2 = client.messages.create(**kwargs2)
         calls.append((model, r2.usage))
         fields = extract_json(text_of(r2))
+
+    # Off-script: any HIGH-risk verdict gets a confirming Opus pass on the full (cached)
+    # playbook — cheap insurance since HIGH-risk contracts are the ones that matter most
+    # if the cheaper model got it wrong.
+    if (CONFIG.get("second_opinion_high_risk") and fields
+            and str(fields.get("risk_tier", "")).strip().upper() == "HIGH"
+            and model != MODEL_OPUS):
+        resp2 = client.messages.create(
+            model=MODEL_OPUS, max_tokens=CONFIG["max_tokens"],
+            system=CACHED_SYSTEM if CONFIG["cache_playbook"] else PLAYBOOK,
+            messages=[{"role": "user", "content": EXTRACT_INSTRUCTION + contract["text"]}],
+            output_config={"format": EXTRACTION_SCHEMA},
+        )
+        calls.append((MODEL_OPUS, resp2.usage))
+        opus_fields = extract_json(text_of(resp2))
+        if opus_fields:
+            fields = opus_fields
 
     return {"fields": fields, "calls": calls, "elapsed": time.perf_counter() - t0}
 
@@ -1281,6 +1327,8 @@ def engagement_score(report: dict, baseline: dict) -> int:
 
 
 def run_scorecard(pipeline, label="clausescan_v1", contracts=CONTRACTS, gold=GOLD):
+    if CONFIG.get("prewarm_cache") and CONFIG.get("cache_playbook"):
+        _prewarm_cache()
     report = run_portfolio(pipeline, contracts=contracts, gold=gold,
                            workers=CONFIG.get("parallel_workers", 0))
     print_report(report, label)
@@ -1290,10 +1338,14 @@ def run_scorecard(pipeline, label="clausescan_v1", contracts=CONTRACTS, gold=GOL
         levers.append("routing")
     if CONFIG.get("cache_playbook"):
         levers.append("cache")
+    if CONFIG.get("playbook_for_complex_only"):
+        levers.append("playbook-complex-only")
     if CONFIG.get("structured_single_pass"):
         levers.append("schema-1pass")
     if CONFIG.get("effort"):
         levers.append(f"effort-{CONFIG['effort']}")
+    if CONFIG.get("second_opinion_high_risk"):
+        levers.append("opus-2nd-opinion")
     if CONFIG.get("parallel_workers"):
         levers.append(f"parallel-x{CONFIG['parallel_workers']}")
     gate = "" if report["accuracy"] >= 0.90 else "  ⛔ accuracy gate failed — score zeroed"
