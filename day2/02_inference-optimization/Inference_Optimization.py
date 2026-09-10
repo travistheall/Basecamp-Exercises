@@ -1204,20 +1204,20 @@ elif RUN_BATCH:
 CONFIG = {
     # Lever 2 — routing. Try: triage_routing=True, routine_model=MODEL_HAIKU,
     #                         complex_model=MODEL_SONNET
-    "triage_routing": False,
-    "routine_model": MODEL_OPUS,
-    "complex_model": MODEL_OPUS,
+    "triage_routing": True,
+    "routine_model": MODEL_HAIKU,
+    "complex_model": MODEL_SONNET,
 
     # Lever 1 — cache the playbook prefix
-    "cache_playbook": False,
+    "cache_playbook": True,
 
     # Lever 3 + the round-trip collapse — one schema pass instead of briefing → essay → JSON
-    "structured_single_pass": False,
-    "max_tokens": 8000,           # right-size once output is disciplined (~1000)
+    "structured_single_pass": True,
+    "max_tokens": 1000,           # right-size once output is disciplined (~1000)
     "effort": None,               # "low" | "medium" | "high" — Sonnet/Opus only
 
     # Lever 5 — portfolio concurrency (0 = sequential; warm-first is automatic)
-    "parallel_workers": 0,
+    "parallel_workers": 4,
 }
 
 
